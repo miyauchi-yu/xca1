@@ -22,6 +22,7 @@ void drawFileDialog();
 void executeAnalysisAsync(const std::string& selectedFile, int maxPasswordLen);
 std::string loadLastDirectory();
 void saveLastDirectory(const std::string& dir);
+void drawCenteredBigPassword(const std::string& password);
 
 /*
  * メイン関数
@@ -180,7 +181,7 @@ void drawFileDialog() {
     }
 
     if (!g_isAnalyzing.load() && !g_resultPassword.empty())
-        ImGui::Text("Analyzed Password: %s", g_resultPassword.c_str());
+        drawCenteredBigPassword(g_resultPassword);
 }
 
 /*
@@ -214,4 +215,30 @@ void saveLastDirectory(const std::string& dir) {
     std::ofstream ofs(LAST_DIR_FILE, std::ios::trunc);
     if (ofs)
         ofs << dir;
+}
+
+/*
+ * 解析成功したパスワードを画面中央に大きく表示する
+ */
+void drawCenteredBigPassword(const std::string& password) {
+    ImGuiIO& io = ImGui::GetIO();
+
+    // フォントを大きく
+    ImGui::SetWindowFontScale(4.0f); // ← 倍率（2.5〜4.0）
+
+    ImVec2 textSize = ImGui::CalcTextSize(password.c_str());
+
+    // 画面中央に配置
+    ImGui::SetCursorPos(ImVec2(
+        (io.DisplaySize.x - textSize.x) * 0.5f,
+        (io.DisplaySize.y - textSize.y) * 0.5f
+    ));
+
+    ImGui::TextColored(
+        ImVec4(0.2f, 1.0f, 0.2f, 1.0f), // 成功感のある緑
+        "%s",
+        password.c_str()
+    );
+
+    ImGui::SetWindowFontScale(1.0f); // 元に戻す
 }
