@@ -1,0 +1,9 @@
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+
+
+/build/
+/external/
