@@ -1,7 +1,8 @@
 #include "analysis.hpp"
 
-Analysis::Analysis(std::string filePath) {
+Analysis::Analysis(std::string filePath, int maxPasswordLen) {
     this->filePath = filePath;
+    this->maxPasswordLen = maxPasswordLen;
 }
 
 Analysis::~Analysis()
@@ -9,7 +10,7 @@ Analysis::~Analysis()
 }
 
 std::string Analysis::run() {
-    const int maxDigits = 4;
+    const int maxDigits = maxPasswordLen;
     const zip_uint64_t fileIndex = 0;
 
     size_t maxThreads = std::thread::hardware_concurrency();

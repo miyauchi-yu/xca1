@@ -19,7 +19,7 @@ static std::thread g_analysisThread;
 static const char* LAST_DIR_FILE = "dir";
 
 void drawFileDialog();
-void executeAnalysisAsync(const std::string& selectedFile);
+void executeAnalysisAsync(const std::string& selectedFile, int maxPasswordLen);
 std::string loadLastDirectory();
 void saveLastDirectory(const std::string& dir);
 
@@ -129,7 +129,12 @@ int main() {
 void drawFileDialog() {
     static std::string selectedFile;
     static std::string lastDir = loadLastDirectory();
+    static int maxPasswordLen;
     static std::string analyzedPassword;
+
+    // 最大パスワード長を設定
+    ImGui::SliderInt("Max Length", &maxPasswordLen, 1, 16);
+    if (maxPasswordLen < 1) maxPasswordLen = 1;
 
     // ボタンでファイルダイアログを開く
     if (ImGui::Button("File Open")) {
@@ -163,7 +168,7 @@ void drawFileDialog() {
             g_isAnalyzing.store(true);
             g_resultPassword.clear();
 
-            g_analysisThread = std::thread(executeAnalysisAsync, selectedFile);
+            g_analysisThread = std::thread(executeAnalysisAsync, selectedFile, maxPasswordLen);
             g_analysisThread.detach(); // UIブロック防止
         }
         if (g_isAnalyzing.load()) {
@@ -179,10 +184,10 @@ void drawFileDialog() {
 }
 
 /*
- * パスワード解析実行(4桁の数字 + 英字 + 記号のみ対応)
+ * パスワード解析実行(暗号方式がZIPCryptoの数字 + 英字 + 記号のみ対応)
  */
-void executeAnalysisAsync(const std::string& selectedFile) {
-    Analysis analysis(selectedFile);
+void executeAnalysisAsync(const std::string& selectedFile, int maxPasswordLen) {
+    Analysis analysis(selectedFile, maxPasswordLen);
     g_resultPassword = analysis.run();
     g_isAnalyzing.store(false);
 }

@@ -7,13 +7,14 @@
 
 class Analysis {
     public:
-        Analysis(std::string filePath);
+        Analysis(std::string filePath, int maxPasswordLen);
         ~Analysis();
         std::atomic<bool> isRunning{false};
         std::atomic<bool> found{false};
         std::string run();
     private:
         std::string filePath;
+        int maxPasswordLen;
         std::string analyzedPassword;
         const std::string charset =
                 "0123456789"
