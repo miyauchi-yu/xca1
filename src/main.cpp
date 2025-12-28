@@ -132,6 +132,7 @@ void drawFileDialog() {
     static std::string lastDir = loadLastDirectory();
     static int maxPasswordLen;
     static std::string analyzedPassword;
+    static std::unique_ptr<Analysis> analysis;
 
     // 最大パスワード長を設定
     ImGui::SliderInt("Max Length", &maxPasswordLen, 1, 16);
@@ -167,30 +168,33 @@ void drawFileDialog() {
             Logger::getInstance().log(LogLevel::Info, "Analyzing passwords from file: " + selectedFile);
 
             g_isAnalyzing.store(true);
+            analysis = std::make_unique<Analysis>(selectedFile, maxPasswordLen);
             g_resultPassword.clear();
 
-            g_analysisThread = std::thread(executeAnalysisAsync, selectedFile, maxPasswordLen);
+            g_analysisThread = std::thread([&]() {
+                g_resultPassword = analysis->run();
+                g_isAnalyzing.store(false);
+            });
             g_analysisThread.detach(); // UIブロック防止
         }
         if (g_isAnalyzing.load()) {
             ImGui::Text("Analyzing password...");
             ImGui::SameLine();
             Spinner("##spinner", 8.0f, 3);
-            ImGui::SameLine();
+
+            // 進捗表示
+            uint64_t tried = analysis->triedCount.load();
+            uint64_t total = analysis->totalCount;
+            float progress = 0.0f;
+            if (total > 0) {
+                progress = (float)tried / (float)total;
+            }
+            ImGui::ProgressBar(progress, ImVec2(-1, 0));
         }
     }
 
     if (!g_isAnalyzing.load() && !g_resultPassword.empty())
         drawCenteredBigPassword(g_resultPassword);
-}
-
-/*
- * パスワード解析実行(暗号方式がZIPCryptoの数字 + 英字 + 記号のみ対応)
- */
-void executeAnalysisAsync(const std::string& selectedFile, int maxPasswordLen) {
-    Analysis analysis(selectedFile, maxPasswordLen);
-    g_resultPassword = analysis.run();
-    g_isAnalyzing.store(false);
 }
 
 /*

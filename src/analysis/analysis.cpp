@@ -13,6 +13,17 @@ std::string Analysis::run() {
     const int maxDigits = maxPasswordLen;
     const zip_uint64_t fileIndex = 0;
 
+    // 進捗初期化
+    triedCount.store(0);
+    found.store(false);
+    result.clear();
+
+    // 総試行回数計算
+    totalCount = 0;
+    for (int len = 1; len <= maxPasswordLen; ++len) {
+        totalCount += pow_u64(charset.size(), len);
+    }
+
     size_t maxThreads = std::thread::hardware_concurrency();
     if (maxThreads == 0) {
         maxThreads = 4;
@@ -39,6 +50,12 @@ std::string Analysis::run() {
 
     analyzedPassword = result;
     return result.empty() ? "?" : result;
+}
+
+uint64_t Analysis::pow_u64(uint64_t base, int exp) {
+    uint64_t r = 1;
+    while (exp--) r *= base;
+    return r;
 }
 
 void Analysis::worker(char firstChar, int maxDigits) {
@@ -92,6 +109,8 @@ bool Analysis::testPassword(
         zip_uint64_t fileIndex,
         const std::string& password
         ) {
+    triedCount++;
+
     int err = 0;
     zip_t* za = zip_open(filePath.c_str(), ZIP_RDONLY, &err);
     if (!za) return false;
